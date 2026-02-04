@@ -1,73 +1,112 @@
 import streamlit as st
-import random
 import time
+import pandas as pd
+from datetime import datetime
 
-# Page configuration
+# ================= PAGE CONFIG =================
 st.set_page_config(
     page_title="Smart Traffic Management System",
     layout="wide"
 )
 
-# Title
+# ================= AUTO REFRESH =================
+REFRESH_INTERVAL = 5  # seconds
+time.sleep(REFRESH_INTERVAL)
+st.experimental_rerun()
+
+# ================= TITLE =================
 st.markdown(
     "<h1 style='text-align:center; color:green;'>SMART TRAFFIC MANAGEMENT SYSTEM</h1>",
     unsafe_allow_html=True
 )
 st.markdown(
-    "<h4 style='text-align:center;'>Dashboard for Emission Reduction</h4>",
+    "<h4 style='text-align:center;'>Live Dashboard for Emission Reduction</h4>",
     unsafe_allow_html=True
 )
 
 st.markdown("---")
 
-# Generate simulated real-time data
-vehicle_count = random.randint(100, 500)
-traffic_density = random.choice(["Low", "Medium", "High"])
-average_speed = random.randint(20, 60)
-co2_emission = random.randint(200, 600)
-fuel_saved = random.randint(10, 50)
-signal_status = random.choice(["RED", "YELLOW", "GREEN"])
+# ================= SIDEBAR CONTROLS =================
+st.sidebar.header("⚙️ Control Panel")
 
-# Dashboard layout
+vehicle_count = st.sidebar.slider("Vehicle Count", 0, 1000, 300)
+traffic_density = st.sidebar.selectbox("Traffic Density", ["Low", "Medium", "High"])
+signal_status = st.sidebar.selectbox("Traffic Signal", ["RED", "YELLOW", "GREEN"])
+co2_emission = st.sidebar.slider("CO₂ Emission (ppm)", 100, 1000, 400)
+
+# ================= LOGIC =================
+if traffic_density == "Low":
+    avg_speed = 60
+    fuel_saved = 40
+elif traffic_density == "Medium":
+    avg_speed = 40
+    fuel_saved = 25
+else:
+    avg_speed = 20
+    fuel_saved = 10
+
+emission_reduction = max(0, 100 - (co2_emission // 10))
+
+# ================= METRICS =================
 col1, col2, col3 = st.columns(3)
 
-# Traffic Flow Overview
 with col1:
-    st.subheader("🚦 Traffic Flow Overview")
+    st.subheader("🚦 Traffic Overview")
     st.metric("Vehicle Count", vehicle_count)
     st.metric("Traffic Density", traffic_density)
-    st.metric("Average Speed (km/h)", average_speed)
+    st.metric("Avg Speed (km/h)", avg_speed)
 
-# Signal Status
 with col2:
-    st.subheader("🚥 Traffic Signal Status")
-    st.metric("Current Signal", signal_status)
-    st.metric("Signal Timer (sec)", random.randint(10, 60))
-    st.write("Emergency Priority: OFF")
+    st.subheader("🚥 Signal Status")
+    st.metric("Signal", signal_status)
+    st.metric("Timer (sec)", 30)
 
-# Emission Monitoring
 with col3:
-    st.subheader("🌱 Emission Monitoring")
-    st.metric("CO₂ Emission (ppm)", co2_emission)
-    st.metric("Fuel Saved (liters)", fuel_saved)
-    st.metric("Emission Reduction", f"{random.randint(5,25)} %")
+    st.subheader("🌱 Emission Status")
+    st.metric("CO₂ (ppm)", co2_emission)
+    st.metric("Fuel Saved (L)", fuel_saved)
+    st.metric("Emission Reduction", f"{emission_reduction} %")
 
 st.markdown("---")
 
-# Alerts Section
-st.subheader("🔔 Alerts & Notifications")
-alerts = [
-    "High traffic detected at Junction A",
-    "Normal traffic flow at Junction B",
-    "High emission levels detected in City Center",
-    "Traffic signals operating normally"
-]
-st.write(random.choice(alerts))
+# ================= LIVE DATA =================
+current_time = datetime.now().strftime("%H:%M:%S")
 
+data = {
+    "Time": [current_time],
+    "Vehicles": [vehicle_count],
+    "CO₂ Emission": [co2_emission],
+    "Fuel Saved": [fuel_saved]
+}
+
+df = pd.DataFrame(data)
+
+# ================= LIVE CHARTS =================
+st.subheader("📊 Live Traffic & Emission Charts")
+
+chart_col1, chart_col2 = st.columns(2)
+
+with chart_col1:
+    st.write("### Vehicle Count (Live)")
+    st.line_chart(df.set_index("Time")["Vehicles"])
+
+with chart_col2:
+    st.write("### CO₂ Emission vs Fuel Saved")
+    st.bar_chart(df.set_index("Time")[["CO₂ Emission", "Fuel Saved"]])
+
+# ================= ALERTS =================
 st.markdown("---")
+st.subheader("🔔 Alerts")
 
-# Footer
+if traffic_density == "High":
+    st.error("High Traffic Congestion Detected!")
+elif co2_emission > 700:
+    st.warning("High Emission Level Detected!")
+else:
+    st.success("Traffic Conditions Normal")
+
+# ================= FOOTER =================
 st.markdown(
-    "<p style='text-align:center;'>System Status: ACTIVE | Real-Time Monitoring Enabled</p>",
+    "<p style='text-align:center;'>Auto Refresh: Every 5 Seconds | Live Simulation Mode</p>",
     unsafe_allow_html=True
 )
