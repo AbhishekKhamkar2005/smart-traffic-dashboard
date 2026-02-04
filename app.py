@@ -15,7 +15,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    "<h4 style='text-align:center;'>One-Time Vehicle Detection Dashboard</h4>",
+    "<h4 style='text-align:center;'>Live Vehicle Detection & Emission Dashboard</h4>",
     unsafe_allow_html=True
 )
 
@@ -26,22 +26,23 @@ car_cascade = cv2.CascadeClassifier(
     cv2.data.haarcascades + "haarcascade_car.xml"
 )
 
-# ================= SIDEBAR =================
-st.sidebar.header("📷 Camera Control")
-capture = st.sidebar.button("Capture Image & Count Vehicles")
+# ================= CAMERA INPUT =================
+st.sidebar.header("📷 Live Camera Control")
+run_camera = st.sidebar.checkbox("Start Camera")
+
+FRAME_WINDOW = st.image([])
 
 vehicle_count = 0
-captured_image = None
 
-# ================= CAMERA CAPTURE =================
-if capture:
+if run_camera:
     cap = cv2.VideoCapture(0)
-    ret, frame = cap.read()
-    cap.release()
 
-    if not ret:
-        st.error("Camera not accessible")
-    else:
+    while run_camera:
+        ret, frame = cap.read()
+        if not ret:
+            st.error("Camera not accessible")
+            break
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         cars = car_cascade.detectMultiScale(gray, 1.1, 2)
 
@@ -50,36 +51,36 @@ if capture:
         for (x, y, w, h) in cars:
             cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-        captured_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        FRAME_WINDOW.image(frame)
 
-# ================= SHOW IMAGE =================
-if captured_image is not None:
-    st.subheader("📸 Captured Image with Vehicle Detection")
-    st.image(captured_image, use_column_width=True)
+        if not st.sidebar.checkbox("Keep Running", value=True):
+            break
 
-# ================= CALCULATIONS =================
-co2_emission = vehicle_count * 2.5  # estimated
+    cap.release()
+
+# ================= EMISSION CALCULATION =================
+co2_emission = vehicle_count * 2.5   # estimated ppm
 fuel_saved = max(0, 50 - vehicle_count)
 
 # ================= DASHBOARD =================
-st.markdown("---")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.subheader("🚗 Vehicle Count")
-    st.metric("Detected Vehicles", vehicle_count)
+    st.subheader("🚗 Vehicle Detection")
+    st.metric("Live Vehicle Count", vehicle_count)
 
 with col2:
-    st.subheader("🌱 CO₂ Emission")
-    st.metric("Estimated CO₂ (ppm)", int(co2_emission))
+    st.subheader("🌱 Emission Estimation")
+    st.metric("CO₂ Emission (ppm)", int(co2_emission))
 
 with col3:
     st.subheader("⛽ Fuel Efficiency")
-    st.metric("Fuel Saved (Liters)", fuel_saved)
+    st.metric("Fuel Saved (L)", fuel_saved)
 
-# ================= CHART =================
+# ================= LIVE CHART =================
 st.markdown("---")
-st.subheader("📊 Vehicle Count Record")
+st.subheader("📊 Live Vehicle Count Chart")
 
 time_now = datetime.now().strftime("%H:%M:%S")
 df = pd.DataFrame({
@@ -87,10 +88,10 @@ df = pd.DataFrame({
     "Vehicle Count": [vehicle_count]
 })
 
-st.bar_chart(df.set_index("Time"))
+st.line_chart(df.set_index("Time"))
 
 # ================= FOOTER =================
 st.markdown(
-    "<p style='text-align:center;'>Single Capture Camera-Based Vehicle Detection</p>",
+    "<p style='text-align:center;'>Live Camera-Based Vehicle Detection Using Computer Vision</p>",
     unsafe_allow_html=True
 )
