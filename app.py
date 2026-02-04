@@ -1,7 +1,6 @@
 import streamlit as st
 import random
 import time
-import os
 
 # Page configuration
 st.set_page_config(
@@ -17,19 +16,6 @@ st.markdown(
 st.markdown(
     "<h4 style='text-align:center;'>Dashboard for Emission Reduction</h4>",
     unsafe_allow_html=True
-)
-
-st.markdown("---")
-
-# ---------------- RANDOM TRAFFIC IMAGE ----------------
-image_folder = "images"
-traffic_images = os.listdir(image_folder)
-random_image = random.choice(traffic_images)
-
-st.image(
-    f"{image_folder}/{random_image}",
-    caption="Live Traffic Snapshot (Simulated)",
-    use_column_width=True
 )
 
 st.markdown("---")
