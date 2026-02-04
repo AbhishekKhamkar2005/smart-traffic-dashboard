@@ -1,73 +1,64 @@
 import streamlit as st
-import random
-import time
+import cv2
+import numpy as np
+from ultralytics import YOLO
+from PIL import Image
 
-# Page configuration
-st.set_page_config(
-    page_title="Smart Traffic Management System",
-    layout="wide"
+# Page config
+st.set_page_config(page_title="Vehicle Counter", layout="centered")
+st.title("🚦 Vehicle Counting from Image")
+
+# Load YOLOv8 model (pretrained)
+@st.cache_resource
+def load_model():
+    return YOLO("yolov8n.pt")  # nano model (fast & light)
+
+model = load_model()
+
+# Vehicle classes in COCO dataset
+VEHICLE_CLASSES = ["car", "bus", "truck", "motorcycle"]
+
+uploaded_file = st.file_uploader(
+    "Upload a road image",
+    type=["jpg", "jpeg", "png"]
 )
 
-# Title
-st.markdown(
-    "<h1 style='text-align:center; color:green;'>SMART TRAFFIC MANAGEMENT SYSTEM</h1>",
-    unsafe_allow_html=True
-)
-st.markdown(
-    "<h4 style='text-align:center;'>Dashboard for Emission Reduction</h4>",
-    unsafe_allow_html=True
-)
+if uploaded_file:
+    # Read image
+    image = Image.open(uploaded_file)
+    img_array = np.array(image)
 
-st.markdown("---")
+    st.image(image, caption="Uploaded Image", use_column_width=True)
 
-# Generate simulated real-time data
-vehicle_count = random.randint(100, 500)
-traffic_density = random.choice(["Low", "Medium", "High"])
-average_speed = random.randint(20, 60)
-co2_emission = random.randint(200, 600)
-fuel_saved = random.randint(10, 50)
-signal_status = random.choice(["RED", "YELLOW", "GREEN"])
+    if st.button("🔍 Detect & Count Vehicles"):
+        results = model(img_array)[0]
 
-# Dashboard layout
-col1, col2, col3 = st.columns(3)
+        vehicle_count = 0
 
-# Traffic Flow Overview
-with col1:
-    st.subheader("🚦 Traffic Flow Overview")
-    st.metric("Vehicle Count", vehicle_count)
-    st.metric("Traffic Density", traffic_density)
-    st.metric("Average Speed (km/h)", average_speed)
+        for box in results.boxes:
+            cls_id = int(box.cls[0])
+            class_name = model.names[cls_id]
 
-# Signal Status
-with col2:
-    st.subheader("🚥 Traffic Signal Status")
-    st.metric("Current Signal", signal_status)
-    st.metric("Signal Timer (sec)", random.randint(10, 60))
-    st.write("Emergency Priority: OFF")
+            if class_name in VEHICLE_CLASSES:
+                vehicle_count += 1
 
-# Emission Monitoring
-with col3:
-    st.subheader("🌱 Emission Monitoring")
-    st.metric("CO₂ Emission (ppm)", co2_emission)
-    st.metric("Fuel Saved (liters)", fuel_saved)
-    st.metric("Emission Reduction", f"{random.randint(5,25)} %")
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                cv2.rectangle(
+                    img_array,
+                    (x1, y1),
+                    (x2, y2),
+                    (0, 255, 0),
+                    2
+                )
+                cv2.putText(
+                    img_array,
+                    class_name,
+                    (x1, y1 - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    (0, 255, 0),
+                    2
+                )
 
-st.markdown("---")
-
-# Alerts Section
-st.subheader("🔔 Alerts & Notifications")
-alerts = [
-    "High traffic detected at Junction A",
-    "Normal traffic flow at Junction B",
-    "High emission levels detected in City Center",
-    "Traffic signals operating normally"
-]
-st.write(random.choice(alerts))
-
-st.markdown("---")
-
-# Footer
-st.markdown(
-    "<p style='text-align:center;'>System Status: ACTIVE | Real-Time Monitoring Enabled</p>",
-    unsafe_allow_html=True
-)
+        st.success(f"🚗 Total Vehicles Detected: **{vehicle_count}**")
+        st.image(img_array, caption="Detected Vehicles", use_column_width=True)
