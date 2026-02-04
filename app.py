@@ -1,96 +1,48 @@
-import streamlit as st
-import random
-import time
+from flask import Flask, jsonify
+from flask_cors import CORS
+import pandas as pd
+import os
 
-# Page configuration
-st.set_page_config(
-    page_title="Smart Traffic Management System",
-    layout="wide"
-)
+app = Flask(__name__)
+CORS(app)
 
-# Title
-st.markdown(
-    "<h1 style='text-align:center; color:green;'>SMART TRAFFIC MANAGEMENT SYSTEM</h1>",
-    unsafe_allow_html=True
-)
-st.markdown(
-    "<h4 style='text-align:center;'>Dashboard for Emission Reduction</h4>",
-    unsafe_allow_html=True
-)
+EMISSION_RATE = 0.0023 # kg of CO2 saved per second of reduced idling
 
-st.markdown("---")
 
-# Generate simulated real-time data
-vehicle_count = random.randint(100, 500)
-traffic_density = random.choice(["Low", "Medium", "High"])
-average_speed = random.randint(20, 60)
-co2_emission = random.randint(200, 600)
-fuel_saved = random.randint(10, 50)
-signal_status = random.choice(["RED", "YELLOW", "GREEN"])
 
-# Dashboard layout
-col1, col2, col3 = st.columns(3)
+@app.route("/traffic", methods=["GET"])
+def get_traffic():
+    csv_path = 'traffic_log.csv'
+    if not os.path.exists(csv_path):
+        return jsonify({"vehicle_count": 0, "density": "Waiting...", "signal_time": 0})
 
-# Traffic Flow Overview
-with col1:
-    st.subheader("🚦 Traffic Flow Overview")
-    st.metric("Vehicle Count", vehicle_count)
-    st.metric("Traffic Density", traffic_density)
-    st.metric("Average Speed (km/h)", average_speed)
+    try:
+        df = pd.read_csv(csv_path)
+        if df.empty: return jsonify({"vehicle_count": 0})
+        
+        # Get latest count
+        latest_count = int(df.iloc[-1, 1])
 
-# Signal Status
-with col2:
-    st.subheader("🚥 Traffic Signal Status")
-    st.metric("Current Signal", signal_status)
-    st.metric("Signal Timer (sec)", random.randint(10, 60))
-    st.write("Emergency Priority: OFF")
+        # Dynamic Timing Logic
+        if latest_count > 20:
+            density, signal_time = "High", 90
+        elif latest_count > 15:
+            density, signal_time = "Medium", 60
+        else:
+            density, signal_time = "Low", 30
 
-# Emission Monitoring
-with col3:
-    st.subheader("🌱 Emission Monitoring")
-    st.metric("CO₂ Emission (ppm)", co2_emission)
-    st.metric("Fuel Saved (liters)", fuel_saved)
-    st.metric("Emission Reduction", f"{random.randint(5,25)} %")
+        # Calculation vs Fixed 90s timer
+        idle_saved = 90 - signal_time
+        emission_saved = round(idle_saved * EMISSION_RATE, 4)
 
-st.markdown("---")
+        return jsonify({
+            "vehicle_count": latest_count,
+            "density": density,
+            "signal_time": signal_time,
+            "emission_saved": emission_saved
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-# Alerts Section
-st.subheader("🔔 Alerts & Notifications")
-alerts = [
-    "High traffic detected at Junction A",
-    "Normal traffic flow at Junction B",
-    "High emission levels detected in City Center",
-    "Traffic signals operating normally"
-]
-st.write(random.choice(alerts))
-
-st.markdown("---")
-
-# Footer
-st.markdown(
-    "<p style='text-align:center;'>System Status: ACTIVE | Real-Time Monitoring Enabled</p>",
-    unsafe_allow_html=True
-)
-import streamlit as st
-import cv2
-import numpy as np
-
-# Create a video capture object
-cap = cv2.VideoCapture(0)
-
-while True:
-    # Read a frame from the camera
-    ret, frame = cap.read()
-    
-    # Convert the frame to RGB
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    
-    # Display the frame
-    st.write(frame)
-    
-    # Check if the user wants to stop
-    if st.button("Stop"):
-        break
-
-# Release the video capture object
-cap.release()
+if __name__ == "__main__":
+    app.run(port=5000, debug=True)
