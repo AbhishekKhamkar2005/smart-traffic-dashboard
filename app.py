@@ -71,50 +71,26 @@ st.markdown(
     "<p style='text-align:center;'>System Status: ACTIVE | Real-Time Monitoring Enabled</p>",
     unsafe_allow_html=True
 )
-import cv2
 import streamlit as st
+import cv2
 import numpy as np
 
-# Load pre-trained model
-net = cv2.dnn.readNet("yolov3.weights", "yolov3.cfg")
-classes = []
-with open("coco.names", "r") as f:
-    classes = [line.strip() for line in f.readlines()]
-
-# Function to detect vehicles
-def detect_vehicles(frame):
-    height, width, _ = frame.shape
-    blob = cv2.dnn.blobFromImage(frame, 1/255, (416, 416), swapRB=True, crop=False)
-    net.setInput(blob)
-    outputs = net.forward(net.getUnconnectedOutLayersNames())
-    vehicles = 0
-    for output in outputs:
-        for detection in output:
-            scores = detection[5:]
-            class_id = np.argmax(scores)
-            confidence = scores[class_id]
-            if confidence > 0.5 and classes[class_id] == "car":
-                vehicles += 1
-    return vehicles
-
-# Capture video feed
+# Create a video capture object
 cap = cv2.VideoCapture(0)
 
 while True:
+    # Read a frame from the camera
     ret, frame = cap.read()
-    if not ret:
-        break
     
-    # Detect vehicles
-    vehicles = detect_vehicles(frame)
+    # Convert the frame to RGB
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     
-    # Update dashboard
-    st.write(f"Vehicle Count: {vehicles}")
+    # Display the frame
+    st.write(frame)
     
-    # Display frame
-    cv2.imshow("Frame", frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    # Check if the user wants to stop
+    if st.button("Stop"):
         break
 
+# Release the video capture object
 cap.release()
-cv2.destroyAllWindows()
