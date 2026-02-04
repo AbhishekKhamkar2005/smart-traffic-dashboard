@@ -1,6 +1,5 @@
 import streamlit as st
 import random
-import time
 
 # Page configuration
 st.set_page_config(
@@ -20,15 +19,41 @@ st.markdown(
 
 st.markdown("---")
 
-# Generate simulated real-time data
+# ---------------- CORE INPUT ----------------
 vehicle_count = random.randint(100, 500)
-traffic_density = random.choice(["Low", "Medium", "High"])
-average_speed = random.randint(20, 60)
-co2_emission = random.randint(200, 600)
-fuel_saved = random.randint(10, 50)
-signal_status = random.choice(["RED", "YELLOW", "GREEN"])
 
-# Dashboard layout
+# ---------------- LOGIC BASED ON VEHICLE COUNT ----------------
+if vehicle_count < 200:
+    traffic_density = "Low"
+    average_speed = random.randint(50, 60)
+    signal_status = "GREEN"
+    signal_timer = 60
+    co2_emission = random.randint(200, 300)
+    fuel_saved = random.randint(40, 50)
+    emission_reduction = random.randint(20, 25)
+    alert_msg = "✅ Normal traffic flow detected"
+
+elif 200 <= vehicle_count <= 350:
+    traffic_density = "Medium"
+    average_speed = random.randint(30, 45)
+    signal_status = "YELLOW"
+    signal_timer = 40
+    co2_emission = random.randint(300, 450)
+    fuel_saved = random.randint(20, 35)
+    emission_reduction = random.randint(10, 20)
+    alert_msg = "⚠️ Moderate traffic – monitor closely"
+
+else:
+    traffic_density = "High"
+    average_speed = random.randint(15, 30)
+    signal_status = "RED"
+    signal_timer = 90
+    co2_emission = random.randint(450, 600)
+    fuel_saved = random.randint(5, 20)
+    emission_reduction = random.randint(5, 10)
+    alert_msg = "🚨 Heavy traffic congestion detected"
+
+# ---------------- DASHBOARD LAYOUT ----------------
 col1, col2, col3 = st.columns(3)
 
 # Traffic Flow Overview
@@ -42,7 +67,7 @@ with col1:
 with col2:
     st.subheader("🚥 Traffic Signal Status")
     st.metric("Current Signal", signal_status)
-    st.metric("Signal Timer (sec)", random.randint(10, 60))
+    st.metric("Signal Timer (sec)", signal_timer)
     st.write("Emergency Priority: OFF")
 
 # Emission Monitoring
@@ -50,10 +75,11 @@ with col3:
     st.subheader("🌱 Emission Monitoring")
     st.metric("CO₂ Emission (ppm)", co2_emission)
     st.metric("Fuel Saved (liters)", fuel_saved)
-    st.metric("Emission Reduction", f"{random.randint(5,25)} %")
+    st.metric("Emission Reduction", f"{emission_reduction} %")
 
 st.markdown("---")
 
+# Alerts Section
 st.subheader("🔔 Alerts & Notifications")
 
 if vehicle_count < 200:
@@ -65,7 +91,6 @@ else:
 
 st.write(alert_msg)
 
-st.markdown("---")
 
 # Footer
 st.markdown(
