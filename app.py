@@ -1,5 +1,6 @@
 import streamlit as st
-import time
+import cv2
+import numpy as np
 import pandas as pd
 from datetime import datetime
 
@@ -9,104 +10,88 @@ st.set_page_config(
     layout="wide"
 )
 
-# ================= AUTO REFRESH =================
-REFRESH_INTERVAL = 5  # seconds
-time.sleep(REFRESH_INTERVAL)
-st.experimental_rerun()
-
-# ================= TITLE =================
 st.markdown(
     "<h1 style='text-align:center; color:green;'>SMART TRAFFIC MANAGEMENT SYSTEM</h1>",
     unsafe_allow_html=True
 )
 st.markdown(
-    "<h4 style='text-align:center;'>Live Dashboard for Emission Reduction</h4>",
+    "<h4 style='text-align:center;'>Live Vehicle Detection & Emission Dashboard</h4>",
     unsafe_allow_html=True
 )
 
 st.markdown("---")
 
-# ================= SIDEBAR CONTROLS =================
-st.sidebar.header("⚙️ Control Panel")
+# ================= LOAD VEHICLE CLASSIFIER =================
+car_cascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_car.xml"
+)
 
-vehicle_count = st.sidebar.slider("Vehicle Count", 0, 1000, 300)
-traffic_density = st.sidebar.selectbox("Traffic Density", ["Low", "Medium", "High"])
-signal_status = st.sidebar.selectbox("Traffic Signal", ["RED", "YELLOW", "GREEN"])
-co2_emission = st.sidebar.slider("CO₂ Emission (ppm)", 100, 1000, 400)
+# ================= CAMERA INPUT =================
+st.sidebar.header("📷 Live Camera Control")
+run_camera = st.sidebar.checkbox("Start Camera")
 
-# ================= LOGIC =================
-if traffic_density == "Low":
-    avg_speed = 60
-    fuel_saved = 40
-elif traffic_density == "Medium":
-    avg_speed = 40
-    fuel_saved = 25
-else:
-    avg_speed = 20
-    fuel_saved = 10
+FRAME_WINDOW = st.image([])
 
-emission_reduction = max(0, 100 - (co2_emission // 10))
+vehicle_count = 0
 
-# ================= METRICS =================
+if run_camera:
+    cap = cv2.VideoCapture(0)
+
+    while run_camera:
+        ret, frame = cap.read()
+        if not ret:
+            st.error("Camera not accessible")
+            break
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        cars = car_cascade.detectMultiScale(gray, 1.1, 2)
+
+        vehicle_count = len(cars)
+
+        for (x, y, w, h) in cars:
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        FRAME_WINDOW.image(frame)
+
+        if not st.sidebar.checkbox("Keep Running", value=True):
+            break
+
+    cap.release()
+
+# ================= EMISSION CALCULATION =================
+co2_emission = vehicle_count * 2.5   # estimated ppm
+fuel_saved = max(0, 50 - vehicle_count)
+
+# ================= DASHBOARD =================
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.subheader("🚦 Traffic Overview")
-    st.metric("Vehicle Count", vehicle_count)
-    st.metric("Traffic Density", traffic_density)
-    st.metric("Avg Speed (km/h)", avg_speed)
+    st.subheader("🚗 Vehicle Detection")
+    st.metric("Live Vehicle Count", vehicle_count)
 
 with col2:
-    st.subheader("🚥 Signal Status")
-    st.metric("Signal", signal_status)
-    st.metric("Timer (sec)", 30)
+    st.subheader("🌱 Emission Estimation")
+    st.metric("CO₂ Emission (ppm)", int(co2_emission))
 
 with col3:
-    st.subheader("🌱 Emission Status")
-    st.metric("CO₂ (ppm)", co2_emission)
+    st.subheader("⛽ Fuel Efficiency")
     st.metric("Fuel Saved (L)", fuel_saved)
-    st.metric("Emission Reduction", f"{emission_reduction} %")
 
+# ================= LIVE CHART =================
 st.markdown("---")
+st.subheader("📊 Live Vehicle Count Chart")
 
-# ================= LIVE DATA =================
-current_time = datetime.now().strftime("%H:%M:%S")
+time_now = datetime.now().strftime("%H:%M:%S")
+df = pd.DataFrame({
+    "Time": [time_now],
+    "Vehicle Count": [vehicle_count]
+})
 
-data = {
-    "Time": [current_time],
-    "Vehicles": [vehicle_count],
-    "CO₂ Emission": [co2_emission],
-    "Fuel Saved": [fuel_saved]
-}
-
-df = pd.DataFrame(data)
-
-# ================= LIVE CHARTS =================
-st.subheader("📊 Live Traffic & Emission Charts")
-
-chart_col1, chart_col2 = st.columns(2)
-
-with chart_col1:
-    st.write("### Vehicle Count (Live)")
-    st.line_chart(df.set_index("Time")["Vehicles"])
-
-with chart_col2:
-    st.write("### CO₂ Emission vs Fuel Saved")
-    st.bar_chart(df.set_index("Time")[["CO₂ Emission", "Fuel Saved"]])
-
-# ================= ALERTS =================
-st.markdown("---")
-st.subheader("🔔 Alerts")
-
-if traffic_density == "High":
-    st.error("High Traffic Congestion Detected!")
-elif co2_emission > 700:
-    st.warning("High Emission Level Detected!")
-else:
-    st.success("Traffic Conditions Normal")
+st.line_chart(df.set_index("Time"))
 
 # ================= FOOTER =================
 st.markdown(
-    "<p style='text-align:center;'>Auto Refresh: Every 5 Seconds | Live Simulation Mode</p>",
+    "<p style='text-align:center;'>Live Camera-Based Vehicle Detection Using Computer Vision</p>",
     unsafe_allow_html=True
 )
