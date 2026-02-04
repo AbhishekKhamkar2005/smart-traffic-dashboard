@@ -26,14 +26,7 @@ traffic_density = random.choice(["Low", "Medium", "High"])
 average_speed = random.randint(20, 60)
 co2_emission = random.randint(200, 600)
 fuel_saved = random.randint(10, 50)
-# Signal color logic based on vehicle count
-if vehicle_count < 200:
-    signal_status = "GREEN"
-elif 200 <= vehicle_count <= 350:
-    signal_status = "YELLOW"
-else:
-    signal_status = "RED"
-
+signal_status = random.choice(["RED", "YELLOW", "GREEN"])
 
 # Dashboard layout
 col1, col2, col3 = st.columns(3)
@@ -71,7 +64,6 @@ else:
     alert_msg = "🚨 Heavy traffic congestion detected – action required"
 
 st.write(alert_msg)
-
 
 st.markdown("---")
 
