@@ -26,7 +26,13 @@ traffic_density = random.choice(["Low", "Medium", "High"])
 average_speed = random.randint(20, 60)
 co2_emission = random.randint(200, 600)
 fuel_saved = random.randint(10, 50)
-signal_status = random.choice(["RED", "YELLOW", "GREEN"])
+# Signal color logic based on vehicle count
+if vehicle_count < 200:
+    signal_status = "GREEN"
+elif 200 <= vehicle_count <= 350:
+    signal_status = "YELLOW"
+else:
+    signal_status = "RED"
 
 # Dashboard layout
 col1, col2, col3 = st.columns(3)
@@ -42,7 +48,20 @@ with col1:
 with col2:
     st.subheader("🚥 Traffic Signal Status")
     st.metric("Current Signal", signal_status)
-    st.metric("Signal Timer (sec)", random.randint(10, 60))
+    st.metric("Signal Timer (sec)", signal_timer)
+    st.write("Emergency Priority: OFF")
+
+    # Signal color & timer based on vehicle count
+if vehicle_count < 200:
+    signal_status = "GREEN"
+    signal_timer = 60
+elif 200 <= vehicle_count <= 350:
+    signal_status = "YELLOW"
+    signal_timer = 40
+else:
+    signal_status = "RED"
+    signal_timer = 90
+
     st.write("Emergency Priority: OFF")
 
 # Emission Monitoring
