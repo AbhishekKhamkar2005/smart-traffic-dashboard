@@ -56,7 +56,6 @@ else:
     emergency_priority = "ON (Immediate)"
     alert_msg = "🚨 Heavy traffic – emergency priority activated"
 
-
 # ---------------- DASHBOARD LAYOUT ----------------
 col1, col2, col3 = st.columns(3)
 
@@ -72,8 +71,7 @@ with col2:
     st.subheader("🚥 Traffic Signal Status")
     st.metric("Current Signal", signal_status)
     st.metric("Signal Timer (sec)", signal_timer)
-   st.write(f"Emergency Priority: {emergency_priority}")
-
+    st.write(f"Emergency Priority: {emergency_priority}")
 
 # Emission Monitoring
 with col3:
@@ -86,16 +84,9 @@ st.markdown("---")
 
 # Alerts Section
 st.subheader("🔔 Alerts & Notifications")
-
-if vehicle_count < 200:
-    alert_msg = "✅ Normal traffic flow detected"
-elif 200 <= vehicle_count <= 350:
-    alert_msg = "⚠️ Moderate traffic – monitor closely"
-else:
-    alert_msg = "🚨 Heavy traffic congestion detected – action required"
-
 st.write(alert_msg)
 
+st.markdown("---")
 
 # Footer
 st.markdown(
