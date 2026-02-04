@@ -54,15 +54,17 @@ with col3:
 
 st.markdown("---")
 
-# Alerts Section
 st.subheader("🔔 Alerts & Notifications")
-alerts = [
-    "High traffic detected at Junction A",
-    "Normal traffic flow at Junction B",
-    "High emission levels detected in City Center",
-    "Traffic signals operating normally"
-]
-st.write(random.choice(alerts))
+
+if vehicle_count < 200:
+    alert_msg = "✅ Normal traffic flow detected"
+elif 200 <= vehicle_count <= 350:
+    alert_msg = "⚠️ Moderate traffic – monitor closely"
+else:
+    alert_msg = "🚨 Heavy traffic congestion detected – action required"
+
+st.write(alert_msg)
+
 
 st.markdown("---")
 
