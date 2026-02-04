@@ -31,6 +31,7 @@ if vehicle_count < 200:
     co2_emission = random.randint(200, 300)
     fuel_saved = random.randint(40, 50)
     emission_reduction = random.randint(20, 25)
+    emergency_priority = "OFF"
     alert_msg = "✅ Normal traffic flow detected"
 
 elif 200 <= vehicle_count <= 350:
@@ -41,7 +42,8 @@ elif 200 <= vehicle_count <= 350:
     co2_emission = random.randint(300, 450)
     fuel_saved = random.randint(20, 35)
     emission_reduction = random.randint(10, 20)
-    alert_msg = "⚠️ Moderate traffic – monitor closely"
+    emergency_priority = "ON (Standby)"
+    alert_msg = "⚠️ Moderate traffic – emergency ready"
 
 else:
     traffic_density = "High"
@@ -51,7 +53,9 @@ else:
     co2_emission = random.randint(450, 600)
     fuel_saved = random.randint(5, 20)
     emission_reduction = random.randint(5, 10)
-    alert_msg = "🚨 Heavy traffic congestion detected"
+    emergency_priority = "ON (Immediate)"
+    alert_msg = "🚨 Heavy traffic – emergency priority activated"
+
 
 # ---------------- DASHBOARD LAYOUT ----------------
 col1, col2, col3 = st.columns(3)
@@ -68,7 +72,8 @@ with col2:
     st.subheader("🚥 Traffic Signal Status")
     st.metric("Current Signal", signal_status)
     st.metric("Signal Timer (sec)", signal_timer)
-    st.write("Emergency Priority: OFF")
+   st.write(f"Emergency Priority: {emergency_priority}")
+
 
 # Emission Monitoring
 with col3:
