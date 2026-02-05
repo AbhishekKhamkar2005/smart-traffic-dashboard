@@ -7,18 +7,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Title
-st.markdown(
-    "<h1 style='text-align:center; color:green;'>SMART TRAFFIC MANAGEMENT SYSTEM</h1>",
-    unsafe_allow_html=True
-)
-st.markdown(
-    "<h4 style='text-align:center;'>Dashboard for Emission Reduction</h4>",
-    unsafe_allow_html=True
-)
-
-st.markdown("---")
-
 # ---------------- CORE INPUT ----------------
 vehicle_count = random.randint(100, 500)
 
@@ -55,6 +43,50 @@ else:
     emission_reduction = random.randint(5, 10)
     emergency_priority = "ON (Immediate)"
     alert_msg = "🚨 Heavy traffic – emergency priority activated"
+
+# ---------------- TRAFFIC LIGHT COLORS ----------------
+red_light = "#555"
+yellow_light = "#555"
+green_light = "#555"
+
+if signal_status == "RED":
+    red_light = "red"
+elif signal_status == "YELLOW":
+    yellow_light = "yellow"
+else:
+    green_light = "green"
+
+# ---------------- TITLE ----------------
+st.markdown(
+    "<h1 style='text-align:center; color:green;'>SMART TRAFFIC MANAGEMENT SYSTEM</h1>",
+    unsafe_allow_html=True
+)
+st.markdown(
+    "<h4 style='text-align:center;'>Dashboard for Emission Reduction</h4>",
+    unsafe_allow_html=True
+)
+
+# ---------------- TRAFFIC LIGHT DISPLAY ----------------
+st.markdown(
+    f"""
+    <div style="display:flex; justify-content:center; margin:20px 0;">
+        <div style="
+            width:90px;
+            background:#222;
+            padding:15px;
+            border-radius:20px;
+            box-shadow:0 0 10px rgba(0,0,0,0.6);
+        ">
+            <div style="width:55px;height:55px;border-radius:50%;background:{red_light};margin:10px auto;"></div>
+            <div style="width:55px;height:55px;border-radius:50%;background:{yellow_light};margin:10px auto;"></div>
+            <div style="width:55px;height:55px;border-radius:50%;background:{green_light};margin:10px auto;"></div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.markdown("---")
 
 # ---------------- DASHBOARD LAYOUT ----------------
 col1, col2, col3 = st.columns(3)
