@@ -1,50 +1,64 @@
 import streamlit as st
-import random
+import time
 
-# Page configuration
+# ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Smart Traffic Management System",
     layout="wide"
 )
 
-# ---------------- CORE INPUT ----------------
-vehicle_count = random.randint(100, 500)
+# ---------------- AUTO REFRESH ----------------
+refresh_rate = st.sidebar.slider("Auto Refresh (seconds)", 5, 60, 10)
+auto_refresh = st.sidebar.checkbox("Enable Auto Refresh")
 
-# ---------------- LOGIC BASED ON VEHICLE COUNT ----------------
+if auto_refresh:
+    time.sleep(refresh_rate)
+    st.rerun()
+
+# ---------------- VEHICLE INPUT ----------------
+st.sidebar.title("Traffic Input Control")
+vehicle_count = st.sidebar.number_input(
+    "Enter Vehicle Count",
+    min_value=0,
+    max_value=1000,
+    value=250
+)
+
+# ---------------- LOGIC ----------------
 if vehicle_count < 200:
     traffic_density = "Low"
-    average_speed = random.randint(50, 60)
+    average_speed = 55
     signal_status = "GREEN"
     signal_timer = 60
-    co2_emission = random.randint(200, 300)
-    fuel_saved = random.randint(40, 50)
-    emission_reduction = random.randint(20, 25)
+    co2_emission = vehicle_count * 1.2
+    fuel_saved = vehicle_count * 0.3
+    emission_reduction = 25
     emergency_priority = "OFF"
     alert_msg = "✅ Normal traffic flow detected"
 
 elif 200 <= vehicle_count <= 350:
     traffic_density = "Medium"
-    average_speed = random.randint(30, 45)
+    average_speed = 40
     signal_status = "YELLOW"
     signal_timer = 40
-    co2_emission = random.randint(300, 450)
-    fuel_saved = random.randint(20, 35)
-    emission_reduction = random.randint(10, 20)
+    co2_emission = vehicle_count * 1.8
+    fuel_saved = vehicle_count * 0.2
+    emission_reduction = 15
     emergency_priority = "ON (Standby)"
     alert_msg = "⚠️ Moderate traffic – emergency ready"
 
 else:
     traffic_density = "High"
-    average_speed = random.randint(15, 30)
+    average_speed = 25
     signal_status = "RED"
     signal_timer = 90
-    co2_emission = random.randint(450, 600)
-    fuel_saved = random.randint(5, 20)
-    emission_reduction = random.randint(5, 10)
+    co2_emission = vehicle_count * 2.5
+    fuel_saved = vehicle_count * 0.1
+    emission_reduction = 8
     emergency_priority = "ON (Immediate)"
     alert_msg = "🚨 Heavy traffic – emergency priority activated"
 
-# ---------------- TRAFFIC LIGHT COLORS ----------------
+# ---------------- TRAFFIC LIGHT ----------------
 red_light = "#555"
 yellow_light = "#555"
 green_light = "#555"
@@ -62,7 +76,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 st.markdown(
-    "<h4 style='text-align:center;'>Dashboard for Emission Reduction</h4>",
+    "<h4 style='text-align:center;'>AI-Based Emission Reduction Dashboard</h4>",
     unsafe_allow_html=True
 )
 
@@ -88,39 +102,33 @@ st.markdown(
 
 st.markdown("---")
 
-# ---------------- DASHBOARD LAYOUT ----------------
+# ---------------- DASHBOARD ----------------
 col1, col2, col3 = st.columns(3)
 
-# Traffic Flow Overview
 with col1:
     st.subheader("🚦 Traffic Flow Overview")
     st.metric("Vehicle Count", vehicle_count)
     st.metric("Traffic Density", traffic_density)
     st.metric("Average Speed (km/h)", average_speed)
 
-# Signal Status
 with col2:
     st.subheader("🚥 Traffic Signal Status")
     st.metric("Current Signal", signal_status)
     st.metric("Signal Timer (sec)", signal_timer)
     st.write(f"Emergency Priority: {emergency_priority}")
 
-# Emission Monitoring
 with col3:
     st.subheader("🌱 Emission Monitoring")
-    st.metric("CO₂ Emission (ppm)", co2_emission)
-    st.metric("Fuel Saved (liters)", fuel_saved)
-    st.metric("Emission Reduction", f"{emission_reduction} %")
+    st.metric("CO₂ Emission (ppm)", round(co2_emission, 2))
+    st.metric("Fuel Saved (liters)", round(fuel_saved, 2))
+    st.metric("Emission Reduction", f"{emission_reduction}%")
 
 st.markdown("---")
 
-# Alerts Section
 st.subheader("🔔 Alerts & Notifications")
-st.write(alert_msg)
+st.success(alert_msg)
 
 st.markdown("---")
-
-# Footer
 st.markdown(
     "<p style='text-align:center;'>System Status: ACTIVE | Real-Time Monitoring Enabled</p>",
     unsafe_allow_html=True
