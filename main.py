@@ -3,11 +3,18 @@ import time
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
-    page_title="Smart Traffic Management System",
+    page_title="4-Lane Smart Traffic Management",
     layout="wide"
 )
 
-# ---------------- AUTO REFRESH ----------------
+# ---------------- SIDEBAR CONTROLS ----------------
+st.sidebar.title("🚦 4-Lane Traffic Control Panel")
+
+lane1 = st.sidebar.number_input("Lane 1 Vehicle Count", 0, 500, 120)
+lane2 = st.sidebar.number_input("Lane 2 Vehicle Count", 0, 500, 180)
+lane3 = st.sidebar.number_input("Lane 3 Vehicle Count", 0, 500, 250)
+lane4 = st.sidebar.number_input("Lane 4 Vehicle Count", 0, 500, 90)
+
 refresh_rate = st.sidebar.slider("Auto Refresh (seconds)", 5, 60, 10)
 auto_refresh = st.sidebar.checkbox("Enable Auto Refresh")
 
@@ -15,121 +22,87 @@ if auto_refresh:
     time.sleep(refresh_rate)
     st.rerun()
 
-# ---------------- VEHICLE INPUT ----------------
-st.sidebar.title("Traffic Input Control")
-vehicle_count = st.sidebar.number_input(
-    "Enter Vehicle Count",
-    min_value=0,
-    max_value=1000,
-    value=250
-)
+# ---------------- STORE LANES ----------------
+lanes = {
+    "Lane 1": lane1,
+    "Lane 2": lane2,
+    "Lane 3": lane3,
+    "Lane 4": lane4
+}
 
-# ---------------- LOGIC ----------------
-if vehicle_count < 200:
-    traffic_density = "Low"
-    average_speed = 55
-    signal_status = "GREEN"
-    signal_timer = 60
-    co2_emission = vehicle_count * 1.2
-    fuel_saved = vehicle_count * 0.3
-    emission_reduction = 25
-    emergency_priority = "OFF"
-    alert_msg = "✅ Normal traffic flow detected"
+# ---------------- FIND HIGHEST TRAFFIC LANE ----------------
+priority_lane = max(lanes, key=lanes.get)
+total_vehicles = sum(lanes.values())
 
-elif 200 <= vehicle_count <= 350:
-    traffic_density = "Medium"
-    average_speed = 40
-    signal_status = "YELLOW"
-    signal_timer = 40
-    co2_emission = vehicle_count * 1.8
-    fuel_saved = vehicle_count * 0.2
-    emission_reduction = 15
-    emergency_priority = "ON (Standby)"
-    alert_msg = "⚠️ Moderate traffic – emergency ready"
-
-else:
-    traffic_density = "High"
-    average_speed = 25
-    signal_status = "RED"
-    signal_timer = 90
-    co2_emission = vehicle_count * 2.5
-    fuel_saved = vehicle_count * 0.1
-    emission_reduction = 8
-    emergency_priority = "ON (Immediate)"
-    alert_msg = "🚨 Heavy traffic – emergency priority activated"
-
-# ---------------- TRAFFIC LIGHT ----------------
-red_light = "#555"
-yellow_light = "#555"
-green_light = "#555"
-
-if signal_status == "RED":
-    red_light = "red"
-elif signal_status == "YELLOW":
-    yellow_light = "yellow"
-else:
-    green_light = "green"
+# ---------------- TRAFFIC LOGIC FUNCTION ----------------
+def traffic_logic(vehicle_count):
+    if vehicle_count < 150:
+        return "Low", 60, "GREEN", vehicle_count * 1.2
+    elif 150 <= vehicle_count <= 300:
+        return "Medium", 40, "YELLOW", vehicle_count * 1.8
+    else:
+        return "High", 90, "RED", vehicle_count * 2.5
 
 # ---------------- TITLE ----------------
 st.markdown(
-    "<h1 style='text-align:center; color:green;'>SMART TRAFFIC MANAGEMENT SYSTEM</h1>",
+    "<h1 style='text-align:center; color:green;'>4-LANE SMART TRAFFIC SURVEILLANCE SYSTEM</h1>",
     unsafe_allow_html=True
 )
 st.markdown(
-    "<h4 style='text-align:center;'>AI-Based Emission Reduction Dashboard</h4>",
-    unsafe_allow_html=True
-)
-
-# ---------------- TRAFFIC LIGHT DISPLAY ----------------
-st.markdown(
-    f"""
-    <div style="display:flex; justify-content:center; margin:20px 0;">
-        <div style="
-            width:90px;
-            background:#222;
-            padding:15px;
-            border-radius:20px;
-            box-shadow:0 0 10px rgba(0,0,0,0.6);
-        ">
-            <div style="width:55px;height:55px;border-radius:50%;background:{red_light};margin:10px auto;"></div>
-            <div style="width:55px;height:55px;border-radius:50%;background:{yellow_light};margin:10px auto;"></div>
-            <div style="width:55px;height:55px;border-radius:50%;background:{green_light};margin:10px auto;"></div>
-        </div>
-    </div>
-    """,
+    "<h4 style='text-align:center;'>AI-Based Traffic Optimization & Emission Reduction</h4>",
     unsafe_allow_html=True
 )
 
 st.markdown("---")
 
 # ---------------- DASHBOARD ----------------
+cols = st.columns(4)
+
+for i, (lane_name, count) in enumerate(lanes.items()):
+    density, timer, signal, emission = traffic_logic(count)
+
+    # Priority logic
+    if lane_name == priority_lane:
+        signal = "GREEN"
+        timer = 90
+
+    with cols[i]:
+        st.subheader(lane_name)
+        st.metric("Vehicles", count)
+        st.metric("Density", density)
+        st.metric("Signal", signal)
+        st.metric("Timer (sec)", timer)
+        st.metric("CO₂ Emission", round(emission, 2))
+
+st.markdown("---")
+
+# ---------------- SUMMARY SECTION ----------------
+st.subheader("📊 Traffic Summary")
+
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.subheader("🚦 Traffic Flow Overview")
-    st.metric("Vehicle Count", vehicle_count)
-    st.metric("Traffic Density", traffic_density)
-    st.metric("Average Speed (km/h)", average_speed)
+    st.metric("Total Vehicles (All Lanes)", total_vehicles)
 
 with col2:
-    st.subheader("🚥 Traffic Signal Status")
-    st.metric("Current Signal", signal_status)
-    st.metric("Signal Timer (sec)", signal_timer)
-    st.write(f"Emergency Priority: {emergency_priority}")
+    st.metric("Priority Lane", priority_lane)
 
 with col3:
-    st.subheader("🌱 Emission Monitoring")
-    st.metric("CO₂ Emission (ppm)", round(co2_emission, 2))
-    st.metric("Fuel Saved (liters)", round(fuel_saved, 2))
-    st.metric("Emission Reduction", f"{emission_reduction}%")
+    avg_emission = sum([traffic_logic(v)[3] for v in lanes.values()])
+    st.metric("Total CO₂ Emission", round(avg_emission, 2))
 
 st.markdown("---")
 
-st.subheader("🔔 Alerts & Notifications")
-st.success(alert_msg)
+# ---------------- ALERT SYSTEM ----------------
+if total_vehicles > 900:
+    st.error("🚨 Severe Congestion Detected Across All Lanes!")
+elif total_vehicles > 600:
+    st.warning("⚠️ High Traffic Volume – Optimizing Signals")
+else:
+    st.success("✅ Traffic Flow Normal")
 
 st.markdown("---")
 st.markdown(
-    "<p style='text-align:center;'>System Status: ACTIVE | Real-Time Monitoring Enabled</p>",
+    "<p style='text-align:center;'>System Status: ACTIVE | 4-Lane Real-Time Monitoring Enabled</p>",
     unsafe_allow_html=True
 )
