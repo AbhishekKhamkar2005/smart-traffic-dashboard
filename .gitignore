@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+traffic_log.csv
+venv/
+.env
