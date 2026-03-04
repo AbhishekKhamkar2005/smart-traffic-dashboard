@@ -2,18 +2,18 @@ import streamlit as st
 import time
 
 # ---------------- PAGE CONFIG ----------------
-st.set_page_config(page_title="Smart Traffic Dashboard", layout="wide")
-st.title("🚦 Smart 4-Lane Traffic Management System")
+st.set_page_config(page_title="Priority Based Smart Traffic", layout="wide")
+st.title("🚦 Smart 4-Lane Traffic System (Priority Controlled)")
 
 # ---------------- SESSION STATE ----------------
-if "active_lane" not in st.session_state:
-    st.session_state.active_lane = 0
-
 if "running" not in st.session_state:
     st.session_state.running = False
 
 if "wait_times" not in st.session_state:
     st.session_state.wait_times = [0, 0, 0, 0]
+
+if "active_lane" not in st.session_state:
+    st.session_state.active_lane = None
 
 # ---------------- SIDEBAR INPUT ----------------
 st.sidebar.header("Traffic Control Panel")
@@ -34,80 +34,81 @@ if start_button:
 if stop_button:
     st.session_state.running = False
 
-# ---------------- SIGNAL TIME CALCULATION ----------------
+# ---------------- PRIORITY SCORE ----------------
+priority_scores = [
+    lane_counts[i] * 0.6 + st.session_state.wait_times[i] * 0.4
+    for i in range(4)
+]
+
+# Select lane with highest priority
+priority_lane = priority_scores.index(max(priority_scores))
+
+# Set active lane as highest priority
+if st.session_state.running:
+    st.session_state.active_lane = priority_lane
+
+current = st.session_state.active_lane
+
+# ---------------- GREEN TIME CALCULATION ----------------
 BASE_TIME = 15
 FACTOR = 0.2
-
 green_times = [int(BASE_TIME + v * FACTOR) for v in lane_counts]
 
 # ---------------- UPDATE WAIT TIMES ----------------
-current = st.session_state.active_lane
-
-if st.session_state.running:
+if st.session_state.running and current is not None:
     for i in range(4):
         if i != current:
             st.session_state.wait_times[i] += 1
         else:
             st.session_state.wait_times[i] = 0
 
-# ---------------- SMART PRIORITY CALCULATION ----------------
-priority_scores = [
-    lane_counts[i] * 0.7 + st.session_state.wait_times[i] * 0.3
-    for i in range(4)
-]
+# ---------------- EMISSION CALCULATION ----------------
+EMISSION_FACTOR = 2.5
+emissions = [v * EMISSION_FACTOR for v in lane_counts]
 
-priority_lane = priority_scores.index(max(priority_scores))
-
-# ---------------- DASHBOARD TABLE ----------------
+# ---------------- DASHBOARD ----------------
 st.markdown("---")
-
-columns = st.columns(8)
 
 headers = [
     "Lane",
     "Vehicles",
     "Wait Time (sec)",
     "Priority Score",
-    "Priority",
     "Signal",
     "Green Time (sec)",
     "CO₂ Emission (g)"
 ]
 
-for col, header in zip(columns, headers):
+cols = st.columns(len(headers))
+for col, header in zip(cols, headers):
     col.markdown(f"**{header}**")
 
-EMISSION_FACTOR = 2.5
-emissions = [v * EMISSION_FACTOR for v in lane_counts]
-
 for i in range(4):
+    row = st.columns(len(headers))
 
     signal = "🟢 GREEN" if i == current and st.session_state.running else "🔴 RED"
-
-    row = st.columns(8)
 
     row[0].write(f"Lane {i+1}")
     row[1].write(lane_counts[i])
     row[2].write(st.session_state.wait_times[i])
     row[3].write(round(priority_scores[i], 2))
-    row[4].write("⭐ YES" if i == priority_lane else "No")
-    row[5].write(signal)
-    row[6].write(green_times[i])
-    row[7].write(emissions[i])
+    row[4].write(signal)
+    row[5].write(green_times[i])
+    row[6].write(emissions[i])
 
 # ---------------- ALERT SECTION ----------------
 st.markdown("---")
 st.subheader("🚨 Alerts")
 
 if max(st.session_state.wait_times) > 60:
-    st.error("One lane waiting too long! Immediate signal adjustment needed.")
+    st.error("One lane waiting too long! Immediate attention required.")
 elif max(lane_counts) > 350:
     st.warning("Heavy congestion detected.")
 else:
-    st.success("Traffic Flow Normal")
+    st.success("Traffic flow normal.")
 
 # ---------------- SIGNAL TIMER ----------------
-if st.session_state.running:
+if st.session_state.running and current is not None:
 
     timer = green_times[current]
 
@@ -120,8 +121,6 @@ if st.session_state.running:
         time.sleep(1)
         progress.progress((sec + 1) / timer)
 
-    # Switch to highest priority lane next
-    st.session_state.active_lane = priority_lane
     st.rerun()
 
 else:
